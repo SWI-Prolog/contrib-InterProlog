@@ -1,0 +1,2 @@
+CALL windowsVariables.bat
+%JAVA_BIN%\java -Djava.library.path=%XSB_BIN_DIRECTORY% -DXSB_BIN_DIRECTORY=%XSB_BIN_DIRECTORY% -DSWI_BIN_DIRECTORY=%SWI_BIN_DIRECTORY% -DYAP_BIN_DIRECTORY=%YAP_BIN_DIRECTORY% -classpath ..\junit.jar;..\interprolog.jar com.declarativa.interprolog.AllTests 
