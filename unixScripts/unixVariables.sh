@@ -1,5 +1,13 @@
-# This is a typical environment for Linux, see elsewhere for Mac OS X
-JAVA_BIN=/usr/lib/jvm/java-6-openjdk/bin
-XSB_BIN_DIRECTORY=/home/YOUR_NAME/XSB271/config/i686-pc-linux-gnu/bin
-SWI_BIN_DIRECTORY=/home/jan/bin
-YAP_BIN_DIRECTORY=/usr/bin
+# Initialise directories for the various components. This script looks
+# in $PATH.  If the executable is not in $PATH or you want to select
+# a specific version respectless of $PATH, change the value of the
+# corresponding variable to an absolute directory path.
+
+dir_for_exe()
+{ echo $(dirname $(which "$1"))
+}
+
+JAVA_BIN="$(dir_for_exe java)"
+XSB_BIN_DIRECTORY="$(dir_for_exe xsb)"
+SWI_BIN_DIRECTORY="$(dir_for_exe swipl)"
+YAP_BIN_DIRECTORY="$(dir_for_exe yap)"
