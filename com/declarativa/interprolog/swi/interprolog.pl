@@ -67,8 +67,6 @@ supportsExceptions.
 
 get_ip_exception_description(E, E).
 
-initialization(G) :- call(G).
-
 
 float_to_intrep(Sign,Power,Mantissa,Float) :-
 	(Float < 0.0
