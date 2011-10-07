@@ -27,7 +27,7 @@ writeAllSocketChars(More,S) :- writeAllSocketChars_(More,S), flush_output(S).
 
 ipinitsockets(Host,Sport) :-
 	ipProgressMessage('Creating socket'),
-	tcp_socket(S), 
+	tcp_socket(S),
 	(tcp_connect(S, Host:Sport)->true;write('Weird socket connect failure 1'),nl,fail),
 	tcp_open_socket(S, InStream, OutStream),
 	ipProgressMessage('Created socket'-S),
@@ -50,11 +50,11 @@ atomRead(Atom,Term) :- catch(atom_to_term(Atom,Term,_),_E,Term=end_of_file).
 
 reset_dcg_mode. % do nothing, only necessary in SWI Prolog
 
-setupJavaInterrupt(InStream) :- 
+setupJavaInterrupt(InStream) :-
 	thread_self(Main), thread_create(ipInterrupter(InStream,Main),_Id,[alias(interProlog_interrupter)]).
 
-ipInterrupter(InStream,Main) :- 
-	socket_get0(InStream,C), C=3, 
+ipInterrupter(InStream,Main) :-
+	socket_get0(InStream,C), C=3,
 	!,
 	thread_signal(Main,throw(interprolog_interrupt)),
 	ipInterrupter(InStream,Main).
@@ -140,7 +140,7 @@ writeAllSocketChars_([C|More],S) :- socket_put(S,C), writeAllSocketChars_(More,S
 
 ipinitialize(Host,Sport,EngineID,Debug) :-
 	(Debug=true->asserta(ipIsDebugging);true),
-	ipinitsockets(Host,Sport), 
+	ipinitsockets(Host,Sport),
 	ipObjectSpec('InvisibleObject',E,[EngineID],_), asserta(ipPrologEngine(E)),
 	ipProgressMessage('ipinitialize concluded').
 
@@ -158,7 +158,7 @@ ipLearnExamples :-
 	readNSocketChars(4,Input,FourBytes),
 	int(Size,FourBytes,[]), % stick to our grammar...
 	ipProgressMessage('Reading more bytes'-Size),
-	readNSocketChars(Size,Input,Bytes), 
+	readNSocketChars(Size,Input,Bytes),
 	streamContents(Examples,_,Bytes,[]), !,
 	ipProgressMessage('Grammar finished analysing examples'),
 	ipProcessExamples(Examples),
@@ -169,7 +169,7 @@ ipLearnExamples :- ipProgressMessage('ipLearnExamples failed'), fail.
 ipLearnExamples(Bytes) :-
 	streamContents(Examples,_,Bytes,[]), !,
 	ipProcessExamples(Examples).
-	
+
 ipProcessExamples([]) :- !.
 ipProcessExamples([
 	object( % This clause must be strictly in sync with this Java class:
@@ -178,7 +178,7 @@ ipProcessExamples([
 	) :-
 	ipcompareTerms(A,B,G,Vars,SubstA,SubstB),
 	ipAnalyseTerm(A,Template,ANames,TVars,TSubs),
-	% Currently we keep 2 (sort of redundant) template flavours, until more programming 
+	% Currently we keep 2 (sort of redundant) template flavours, until more programming
 	% experience with this is collected:
 	assertz(ipObjectSpec(Name,G,Vars,examples-[SubstA,SubstB]/ANames)),
 	assertz(ipObjectTemplate(Name,Template,ANames,TVars,TSubs)),
@@ -189,23 +189,23 @@ ipProcessExamples([
 
 
 % ipcompareTerms(A,B,G,Vars,SubstA,SubstB).
-% Given two *ground* object specs, obtains a generic object, the substitutions 
+% Given two *ground* object specs, obtains a generic object, the substitutions
 % that would allow the production of both from the generic object,
 % and list of its free variables
 ipcompareTerms(A,A,A,[],[],[]) :- ! .
 ipcompareTerms(A,B,G,Vars,VA,VB) :- functor(A,F,N), functor(B,F,N), N>0, \+ ipWholeTerm(A), !,
-	A=..[_|ArgsA], B=..[_|ArgsB], 
+	A=..[_|ArgsA], B=..[_|ArgsB],
 	ipcompareArgs(ArgsA,ArgsB,ArgsG,Vars,VA,VB),
 	G=..[F|ArgsG].
 ipcompareTerms(A,B,G,[G],[A],[B]). % different atomic term or different functor
 
 ipcompareArgs([],[],[],[],[],[]) :- !.
-ipcompareArgs([A|An],[B|Bn],[G1|Gn],Vars,VA,VB) :- 
-	ipcompareTerms(A,B,G1,Vars1,VA1,VA2), 
+ipcompareArgs([A|An],[B|Bn],[G1|Gn],Vars,VA,VB) :-
+	ipcompareTerms(A,B,G1,Vars1,VA1,VA2),
 	ipcompareArgs(An,Bn,Gn,Varsn,VAn,VBn),
 	append(Vars1,Varsn,Vars), append(VA1,VAn,VA), append(VA2,VBn,VB).
 
-% For convenience, some grammar semantic representations are terms, 
+% For convenience, some grammar semantic representations are terms,
 % although later they may be converted to atomic terms...
 % ipWholeTerm(long(_,_,_,_,_,_,_,_)).
 ipWholeTerm(long(_,_,_,_)).
@@ -217,7 +217,7 @@ ipIsObjectReference(object(class('com.declarativa.interprolog.util.InvisibleObje
 
 /****** Support for Prolog -> Java goal calls (callbacks) ******/
 
-% javaMessage, non-sugared version   
+% javaMessage, non-sugared version
 
 javaMessage(Target,Result,Exception,MessageName,ArgList,ReturnArgs,NewArgList) :-
 	(atom(MessageName) -> true ; write('*** MessageName must be an atom'), fail),
@@ -232,14 +232,14 @@ javaMessage2(Bytes,Timestamp,Result,Exception,NewArgList):-
 	streamContents([Contents],_,ResultBytes,[]), !,
 	handleCallbackResult(Contents,Timestamp,Result,Exception,NewArgList).
 
-interprologSendReceive(Bytes, NewBytes) :- 
+interprologSendReceive(Bytes, NewBytes) :-
 	ipsocketstreams(Input,Output), !, % socket implementation
 	ipProgressMessage(writeAllSocketChars-Output),
 	writeAllSocketChars(Bytes,Output),
 	ipProgressMessage(readNSocketChars-Input),
 	readNSocketChars(4,Input,FourBytes),
 	int(Size,FourBytes,[]), % stick to our grammar...
-	readNSocketChars(Size,Input,NewBytes).	   
+	readNSocketChars(Size,Input,NewBytes).
 interprologSendReceive(Bytes, NewBytes) :- % JNI implementation
 	length(Bytes, L), interprolog_callback(L,Bytes,NewBytes).
 
@@ -273,7 +273,7 @@ ip_inc_jm_counter(N) :- retract(ip_jm_counter(N)), !,  N1 is N+1, asserta(ip_jm_
 
 
 %%% javaMessage, sugared versions
-	
+
 /*
 Examples:
 javaMessage(string(miguel),R,E,length,[],0,NewArgs), ipObjectSpec(Class,R,Value,_).
@@ -309,12 +309,12 @@ javaTarget(Target,Target).
 javaTargets([],[]) :- !.
 javaTargets([A|Args],[RA|RealArgs]) :- javaTarget(A,RA), javaTargets(Args,RealArgs).
 
-	
+
 extractGoalVars(Object,Timestamp,Goal,RVars,Error) :-
-  var(Error), 
+  var(Error),
   ipObjectSpec('GoalFromJava',Object,[Timestamp,GoalAtom,OVar],_),
   atomRead(GoalAtom,X),
-  (X==end_of_file -> Error=string('Syntax error in goal') 
+  (X==end_of_file -> Error=string('Syntax error in goal')
    ; X=gfj(Goal,OVar,RVars)).
 
 
@@ -326,23 +326,23 @@ mayPrepareGoalBindings(RVars,G,RVars,G).
 handleDeterministicGoal(_Goal,_RVars,Error,Timestamp,NewBytes) :- nonvar(Error), !,
 	specifyPrologResult(Timestamp,0,[],Result,Error),
 	streamContents([Result],_,NewBytes,[]).
-handleDeterministicGoal(Goal,RVars,Error,Timestamp,NewBytes)  :- 
+handleDeterministicGoal(Goal,RVars,Error,Timestamp,NewBytes)  :-
 	mayPrepareGoalBindings(RVars,Goal,RVars2,Goal2),
 	ipProgressMessage('Calling dg '-Goal2),
 	%( call(Goal2) -> Succeeded=1, NewRVars=RVars2 ; Succeeded=0, NewRVars=[]),
 	(supportsExceptions ->
-		( catch(Goal2,PE, handle_ip_exception(PE,Error2)) -> 
+		( catch(Goal2,PE, handle_ip_exception(PE,Error2)) ->
 			(var(Error2) -> Succeeded=1, NewRVars=RVars2 ; Succeeded=0, NewRVars=[])
-			; 
-			Succeeded=0, NewRVars=[]) 
+			;
+			Succeeded=0, NewRVars=[])
 		;
 		( call(Goal2) -> Succeeded=1, NewRVars=RVars2 ; Succeeded=0, NewRVars=[]), Error2=_
 	),
 	ipProgressMessage(dg_result-Goal2-Succeeded/PE),
-	(	specifyPrologResult(Timestamp,Succeeded,NewRVars,Result,Error2), streamContents([Result],_,NewBytes,[]) -> 
+	(	specifyPrologResult(Timestamp,Succeeded,NewRVars,Result,Error2), streamContents([Result],_,NewBytes,[]) ->
 		Error2=Error
 		;
-		Error = string('IP grammar failure, probably bad object specification'), 
+		Error = string('IP grammar failure, probably bad object specification'),
 		specifyPrologResult(Timestamp,0,[],Result,Error), streamContents([Result],_,NewBytes,[])) .
 
 
@@ -369,38 +369,38 @@ deterministicGoal :-
    % ipProgressMessage(readNSocketChars_from-Input),
    readNSocketChars(4,Input,FourBytes),
    int(Size,FourBytes,[]), % stick to our grammar...
-   readNSocketChars(Size,Input,Bytes), 
+   readNSocketChars(Size,Input,Bytes),
    % tell('lastBytes.txt'),write(Bytes),nl,told,
    (streamContents([Contents],_,Bytes,[]) -> extractGoalVars(Contents,NewTimestamp,Goal,RVars,Error) ; Error=string('Could not understand objects sent from Java')),
    handleDeterministicGoal(Goal,RVars,Error,NewTimestamp,NewBytes),
    writeAllSocketChars(NewBytes,Output),
    ipProgressMessage('Exiting deterministicGoal '-Goal).
-   
+
 
 
 /****** Prolog term <-> TermModel specification ******/
 
-% buildTermModel(Term,TermModelSpec) 
+% buildTermModel(Term,TermModelSpec)
 buildTermModel(X,Model) :- copy_term(X,XX), buildTermModel_(XX,Model).
 
 % Binds variables with iP_Variable_ terms
-buildTermModel_(X,Model) :- integer(X), !, 
+buildTermModel_(X,Model) :- integer(X), !,
 	ipObjectSpec('java.lang.Integer',Integer,[X],_),
 	ipObjectSpec('TermModel',Model,[0,null,Integer],_).
-buildTermModel_(X,Model) :- float(X), !, 
+buildTermModel_(X,Model) :- float(X), !,
 	ipObjectSpec('java.lang.Float',Float,[X],_),
 	ipObjectSpec('TermModel',Model,[0,null,Float],_).
-buildTermModel_(X,Model) :- var(X), !, 
+buildTermModel_(X,Model) :- var(X), !,
 	ip_inc_var_counter(N), X= iP_Variable_(N), buildTermModel_(X,Model).
-buildTermModel_(X,Model) :- atom(X), !, 
+buildTermModel_(X,Model) :- atom(X), !,
 	(is_list(X) -> IsList=1;IsList=0),
 	ipObjectSpec('TermModel',Model,[IsList,null,string(X)],_).
 buildTermModel_(iP_Variable_(N),Model) :- !,
 	ipObjectSpec('VariableNode',VN,[N],_),
 	ipObjectSpec('TermModel',Model,[0,null,VN],_).
 /* flat lists: this implies revision in list2string etc.:
-buildTermModel_(X,Model) :- is_list(X), !, 
-	ipObjectSpec('TermModel',Model,[ModelList,string('.')],_),	
+buildTermModel_(X,Model) :- is_list(X), !,
+	ipObjectSpec('TermModel',Model,[ModelList,string('.')],_),
 	buildTermModelList_(X,ModelList). % flat the list
 */
 buildTermModel_(X,Model) :- X=..[Functor|Args],
@@ -409,12 +409,12 @@ buildTermModel_(X,Model) :- X=..[Functor|Args],
 	buildTermModelList_(Args,ModelList).
 
 buildTermModelList_([],null) :- !.
-buildTermModelList_(Args,ModelList) :- 
+buildTermModelList_(Args,ModelList) :-
 	buildTermModelList_2(Args,ModelList_),
 	ipObjectSpec('ArrayOfTermModel',ModelList,[ModelList_],_).
 
 buildTermModelList_2([],[]).
-buildTermModelList_2([A1|An],[Model1|ModelN]) :- 
+buildTermModelList_2([A1|An],[Model1|ModelN]) :-
 	buildTermModel_(A1,Model1), buildTermModelList_2(An,ModelN).
 
 % Renumbers each term''s variables separately
@@ -423,7 +423,7 @@ buildTermModels([T1|Tn],[M1|Mn]) :- buildTermModel(T1,M1), buildTermModels(Tn,Mn
 
 
 % buildTermModelArray(+Terms,-Array)
-buildTermModelArray(T,ArrayModel) :- 
+buildTermModelArray(T,ArrayModel) :-
 	buildTermModelList_2(T,TMs), ipObjectSpec('ArrayOfTermModel',ArrayModel,[TMs],_).
 
 :- dynamic(ip_var_counter/1).
@@ -439,7 +439,7 @@ ip_inc_var_counter(N) :- retract(ip_var_counter(N)), !,  N1 is N+1, asserta(ip_v
 recoverTermModel(Model,Term) :-
 	recoverTermModel(Model,VarChunks,[],Term),
 	bindRepeatedVars(VarChunks).
-	
+
 recoverTermModels(Models,Terms) :-
 	recoverTermModelList2(Models,VarChunks,[],Terms),
 	bindRepeatedVars(VarChunks).
@@ -453,28 +453,28 @@ bindRepeatedVars([N-Var|Chunks],N-Var) :- !, bindRepeatedVars(Chunks,N-Var).
 bindRepeatedVars([_|Chunks],NV) :- bindRepeatedVars(Chunks,NV).
 
 
-recoverTermModel(Model,[N-Var|VarChunks],VarChunks,Var) :- 
+recoverTermModel(Model,[N-Var|VarChunks],VarChunks,Var) :-
 	ipObjectSpec('TermModel',Model,[0,null,VN],_), % A variable cannot have children, Prolog syntax
 	ipObjectSpec('VariableNode',VN,[N],_), !.
-recoverTermModel(Model,V,V,[]) :- 
+recoverTermModel(Model,V,V,[]) :-
 	ipObjectSpec('TermModel',Model,[1,null,string('.')],_), !.
-recoverTermModel(Model,V,V,[]) :- 
+recoverTermModel(Model,V,V,[]) :-
 	ipObjectSpec('TermModel',Model,[1,null,string('[]')],_), !.
-recoverTermModel(Model,V,V,Atom) :- 
+recoverTermModel(Model,V,V,Atom) :-
 	ipObjectSpec('TermModel',Model,[0,null,string(Atom)],_), !.
-recoverTermModel(Model,V,V,X) :- 
+recoverTermModel(Model,V,V,X) :-
 	ipObjectSpec('TermModel',Model,[0,null,Integer],_),
 	ipObjectSpec('java.lang.Integer',Integer,[X],_), !.
-recoverTermModel(Model,V,V,X) :- 
+recoverTermModel(Model,V,V,X) :-
 	ipObjectSpec('TermModel',Model,[0,null,Float],_),
 	ipObjectSpec('java.lang.Float',Float,[X],_), !.
-recoverTermModel(Model,V1,Vn,X) :- 
+recoverTermModel(Model,V1,Vn,X) :-
 	ipObjectSpec('TermModel',Model,[_PrologWillAssume,ModelList,string(Functor)],_),
 	recoverTermModelList(ModelList,V1,Vn,Args),
 	X=..[Functor|Args].
 
 recoverTermModelList(null,V,V,[]) :- !.
-recoverTermModelList(ModelList,V1,Vn,Args) :- 
+recoverTermModelList(ModelList,V1,Vn,Args) :-
 	ipObjectSpec('ArrayOfTermModel',ModelList,[ModelList_],_),
 	recoverTermModelList2(ModelList_,V1,Vn,Args).
 
@@ -491,7 +491,7 @@ recoverTermModelArray(Model,List) :-
 
 
 %stringArraytoList(?StringArrayObject,?List)
-stringArraytoList(Array,List) :- 
+stringArraytoList(Array,List) :-
 	ipObjectTemplate('ArrayOfString',Array,_,[L],_),
 	stringArraytoList2(L,List).
 
@@ -501,38 +501,38 @@ stringArraytoList2([string(X)|L],[X|List]) :- stringArraytoList2(L,List).
 
 /****** Object <-> Term Definite Clause Grammar ******/
 
-% A DCG implementing most of Sun Object Serialization Stream Protocol Grammar, 
-% cf. Serialization Specification JDK 1.1, 
+% A DCG implementing most of Sun Object Serialization Stream Protocol Grammar,
+% cf. Serialization Specification JDK 1.1,
 % http://java.sun.com/products/jdk/1.1/docs/guide/serialization/spec/protocol.doc.html
-% Provides InterProlog's core ability to map Java objects to/from their Prolog term specifications  
+% Provides InterProlog's core ability to map Java objects to/from their Prolog term specifications
 % Same as the stream grammar, first letters changed to lowercase where needed
 % Grammar terminals are stream bytes
 % Two extra args are PreviousHandles, NewHandles, to keep previous known objects
 % Java references among objects in the stream map into Prolog unification
 % For unimplemented aspects check the InterProlog README file, and comments below
 
-% Asserting 'repeatedObjectsDetectedGenerating' will cause streamContents/4 
+% Asserting 'repeatedObjectsDetectedGenerating' will cause streamContents/4
 % to detect repeated terms and map them into object handles,
-% as one would normally expect. The default however is to detect only repeated 
+% as one would normally expect. The default however is to detect only repeated
 % CLASS, string (note these are kept unique anyway on the Java side)
 % and VariableNode objects, for speed... AND for correctness too:
-% Consider two objects X and Y in Java, such that !(X==Y) && X.equals(Y(), e.g. they're different objects 
+% Consider two objects X and Y in Java, such that !(X==Y) && X.equals(Y(), e.g. they're different objects
 % but similar; they'll be serialized to Prolog as two different terms, TX and TY. But since TX and TY
 % are ground, on the Prolog side TX==TY. When sending them back to Java, if repeatedObjectsDetectedGenerating,
 % then a single object Z will be received by Java. This may be fixable by adding an extra (free) variable
 % to object term specifications
 
-% Handles in the Java-> Prolog direction are ALWAYS mapped into term unification, 
+% Handles in the Java-> Prolog direction are ALWAYS mapped into term unification,
 % possibly creating circular Prolog terms. So to serialize such objects back to Java,
-% you need 'repeatedObjectsDetectedGenerating' asserted... Which works, but incurring in the above 
+% you need 'repeatedObjectsDetectedGenerating' asserted... Which works, but incurring in the above
 % correctness problem :-( In conclusion, this needs fixing in a future version - but not on this one
 % because there's been no need yet to serialize objects that contain cyclic references from Prolog to Java ...
 
-% The object <-> term grammar has been extended to support blockdata, so for example Vectors continue 
-% to be serializable to Prolog (even under JDK 1.4.2, which changed the serialization ways of Vectors) 
-% and other things such as AWT objects etc. may be serialized to Prolog too, and recovered later by Java 
-% (but see comments above for limitations). Notice that typically this "huge serialization" business 
-% is bad practice - if something is huge and mostly opaque from the Prolog side, it's better to 
+% The object <-> term grammar has been extended to support blockdata, so for example Vectors continue
+% to be serializable to Prolog (even under JDK 1.4.2, which changed the serialization ways of Vectors)
+% and other things such as AWT objects etc. may be serialized to Prolog too, and recovered later by Java
+% (but see comments above for limitations). Notice that typically this "huge serialization" business
+% is bad practice - if something is huge and mostly opaque from the Prolog side, it's better to
 % pass an InvisibleObject (reference to the object) rather than to the object itself, and javaMessage to it as needed
 
 
@@ -540,10 +540,10 @@ stringArraytoList2([string(X)|L],[X|List]) :- stringArraytoList2(L,List).
 %:- asserta(repeatedObjectsDetectedGenerating).
 
 streamContents(C,Handles,Bytes0,Bytes) :-
-	(var(Bytes0) -> 
+	(var(Bytes0) ->
 		Job=generated(N), ipProgressMessage(grammar_generating), nonvar(C)
 		% tell('generatingFor.txt'),write(C), nl,told
-		; 
+		;
 		Job=parsed(N), ipProgressMessage(grammar_analysing)
 	),
 	reset_dcg_mode, % to be compatible with programs using tphrase_set_string
@@ -555,7 +555,7 @@ streamContents(C,Handles,Bytes0,Bytes) :- ipIsDebugging,
 	write(streamContents(C,Handles,Bytes0,Bytes)), nl, told,
 	fail.
 
-streamContents0(C,Handles) --> 
+streamContents0(C,Handles) -->
 	magic, streamversion, contents(C,handles(-1,[]),Handles), !.
 
 % Slightly different recursion pattern at the top level:
@@ -566,7 +566,7 @@ moreContents([],H,H) --> [].
 
 content(O,H1,Hn) --> object(O,H1,Hn).
 content(Block,H,H) --> blockdata(Block).
-	
+
 object(O,H1,Hn) --> nullReference(O,H1,Hn) /*, !*/.
 object(O,H1,Hn) --> prevObject(O,H1,Hn). % this alternative must be before the next ones
 object(O,H1,Hn) --> newString(O,H1,Hn).
@@ -586,26 +586,26 @@ classDesc(D,H1,Hn) --> newClassDesc(D,H1,Hn).
 
 superClassDesc(D,H1,Hn) --> classDesc(D,H1,Hn).
 
-newClassDesc(class(Name,VUID,Info),H1,Hn) --> 
-	tC_CLASSDESC, className(Name,H1,H2), 
+newClassDesc(class(Name,VUID,Info),H1,Hn) -->
+	tC_CLASSDESC, className(Name,H1,H2),
 	% {ipProgressMessage(newClassDesc-Name)},
 	% ipShowTerminalsIf(Name='[Ljava.lang.String;'),
-	serialVersionUID(VUID,H2,H3), 
-	newHandle(class(Name,VUID,Info),H3,H4), 
+	serialVersionUID(VUID,H2,H3),
+	newHandle(class(Name,VUID,Info),H3,H4),
 	% {ipProgressMessageIf('added handle',Name=='[Ljava.lang.String;')},
 	classDescInfo(Info,H4,Hn).
 newClassDesc(_Class,H,H) -->
       tC_PROXYCLASSDESC, { /* ipProgressMessage('Not handling proxy class descriptions'),*/ fail}.
 
-classDescInfo(classDescInfo(Fields,Flags,Super),H1,Hn) --> 
-	classDescFlags(Flags,H1,H2), fields(Fields,H2,H3), classAnnotation(H3,H4), 
+classDescInfo(classDescInfo(Fields,Flags,Super),H1,Hn) -->
+	classDescFlags(Flags,H1,H2), fields(Fields,H2,H3), classAnnotation(H3,H4),
 	superClassDesc(Super,H4,Hn).
 
 className(Name,H,H) --> utf(Name).
 
 serialVersionUID(VUID,H,H) --> long(VUID).
 
-classDescFlags(Flags,H,H) --> byte(Flags). 
+classDescFlags(Flags,H,H) --> byte(Flags).
 
 fields(Fields,H1,Hn) --> ipPeekTerminal(NextByte),
 %	{ground(Fields) -> length(Fields,Count) ; Count=Count},
@@ -616,7 +616,7 @@ nFieldDesc(0,[],H,H) --> [].
 nFieldDesc(N,[F|More],H1,Hn) -->
 	a_fieldDesc(F,H1,H2), {NN is N-1}, nFieldDesc(NN,More,H2,Hn).
 
-a_fieldDesc(F,H1,Hn) --> 
+a_fieldDesc(F,H1,Hn) -->
 	(primitiveDesc(F,H1,Hn) ; objectDesc(F,H1,Hn)).
 
 primitiveDesc(byte(Name),H,H) --> [66], fieldName(Name). % B
@@ -628,9 +628,9 @@ primitiveDesc(float(Name),H,H) --> [70], fieldName(Name). % F
 primitiveDesc(double(Name),H,H) --> [68], fieldName(Name). % D
 primitiveDesc(long(Name),H,H) --> [74], fieldName(Name). % J
 
-objectDesc(arrayField(Name,ClassName),H1,Hn) --> 
+objectDesc(arrayField(Name,ClassName),H1,Hn) -->
 	[91], fieldName(Name), object(string(ClassName),H1,Hn). % '[' previously used nonterminal className
-objectDesc(objectField(Name,ClassName),H1,Hn) --> 
+objectDesc(objectField(Name,ClassName),H1,Hn) -->
 	[76], fieldName(Name), object(string(ClassName),H1,Hn). % 'L' previously used nonterminal className
 
 fieldName(Name) --> utf(Name).
@@ -639,8 +639,8 @@ fieldName(Name) --> utf(Name).
 
 classAnnotation(H,H) --> endBlockData. % Not accepted: endBlockData ; contents, endBlockData.
 
-newArray(arrayObject(D,Values),H1,Hn) --> 
-	tC_ARRAY, classDesc(D,H1,H2), newHandle(arrayObject(D,Values),H2,H3), 
+newArray(arrayObject(D,Values),H1,Hn) -->
+	tC_ARRAY, classDesc(D,H1,H2), newHandle(arrayObject(D,Values),H2,H3),
 	ipPeekTerminal(NextByte),
 	{var(NextByte) -> length(Values,Size) ; Size=Size},
 %	{ground(Values) -> length(Values,Size) ; Size=Size},
@@ -660,12 +660,12 @@ elementValue(class('[F',_,_),V,H,H) --> !, float(V).
 elementValue(class('[D',_,_),V,H,H) --> !, double(V).
 elementValue(class('[J',_,_),V,H,H) --> !, long(V).
 elementValue(class('[I',_,_),V,H,H) --> !, int(V).
-elementValue(_,V,H1,Hn) --> object(V,H1,Hn). 
+elementValue(_,V,H1,Hn) --> object(V,H1,Hn).
 	% Final case: not an array of basic type. Type verifications (D...) superfluous...
 
 
-newObject(object(D,Data),H1,Hn) --> 
-	tC_OBJECT, classDesc(D,H1,H2), 
+newObject(object(D,Data),H1,Hn) -->
+	tC_OBJECT, classDesc(D,H1,H2),
 	newHandle(object(D,Data),H2,H3), classesData(D,Data,H3,Hn).
 
 % Topmost class (Object) causes topmost value to always be []...
@@ -677,19 +677,19 @@ classesData(class(Name,VUID,classDescInfo(Fields,Flags,Super)),SData+ThisData,H1
 superClassData(null,[],H,H) --> !.
 superClassData(D,Data,H1,Hn) --> classesData(D,Data,H1,Hn).
 
-/* Several cases to consider depending the serialization flags. First is 
+/* Several cases to consider depending the serialization flags. First is
 serializable without writeObject method:*/
-classData(class(Name,VUID,classDescInfo(Fields,Flags,Super)),Data,H1,Hn) --> 
-	{Flags=2}, 
+classData(class(Name,VUID,classDescInfo(Fields,Flags,Super)),Data,H1,Hn) -->
+	{Flags=2},
 	% cf. http://java.sun.com/j2se/1.4.2/docs/api/constant-values.html#java.io.ObjectStreamConstants.SC_SERIALIZABLE
 	nowrclass(class(Name,VUID,classDescInfo(Fields,Flags,Super)),Data,H1,Hn).
 /* Second is serializable with writeObject method:*/
 classData(class(Name,VUID,classDescInfo(Fields,Flags,Super)),DefaultData-BlockData,H1,Hn) -->
 	{Flags=3},
 	% cf. http://java.sun.com/j2se/1.4.2/docs/api/constant-values.html#java.io.ObjectStreamConstants.SC_WRITE_METHOD
-	wrclass(class(Name,VUID,classDescInfo(Fields,Flags,Super)),DefaultData,H1,H2), 
+	wrclass(class(Name,VUID,classDescInfo(Fields,Flags,Super)),DefaultData,H1,H2),
 	objectAnnotation(BlockData,H2,Hn).
-/* Cases involving Externalizable are not handled, as in general parsing requires knowledge coded in Externalizable.readExternal */	
+/* Cases involving Externalizable are not handled, as in general parsing requires knowledge coded in Externalizable.readExternal */
 classData(class(Name,_VUID,classDescInfo(_Fields,Flags,_Super)),_,_,_) -->
 	{nonvar(Flags), Flags\==2, Flags\==3, !, ipProgressMessage(('Bad flags in class:'-Flags-Name)), fail}.
 
@@ -706,23 +706,23 @@ endBlockData --> tC_ENDBLOCKDATA.
 blockdata(Block) --> blockdatashort(Block).
 blockdata(Block) --> blockdatalong(Block).
 
-blockdatashort(blockdata(Block)) --> 
+blockdatashort(blockdata(Block)) -->
 	tC_BLOCKDATA, [Size], {var(Size)->length(Block,Size);true},
 	{Size<256, Size>=0},
 	blockbytes(Size,Block).
-blockdatalong(blockdata(Block)) --> 
+blockdatalong(blockdata(Block)) -->
 	tC_BLOCKDATALONG, {nonvar(Block)->length(Block,Size);true},
-	int(Size), 
+	int(Size),
 	{Size>255},
 	blockbytes(Size,Block).
 
 % blockbytes(+Size,?Block)
 blockbytes(0,[]) --> !.
-blockbytes(Size,[Byte|Block]) --> 
+blockbytes(Size,[Byte|Block]) -->
 	[Byte], {NewSize is Size-1}, blockbytes(NewSize,Block).
 
 newString(string(S),H1,Hn) --> tC_STRING, utf(S), newHandle(string(S),H1,Hn).
-newString(_S,H,H) --> tC_LONGSTRING, 
+newString(_S,H,H) --> tC_LONGSTRING,
 	{/* ipProgressMessage('Not handling long strings yet'),*/ fail}.
 
 newEnum(_O,H,H) -->
@@ -739,18 +739,18 @@ prolog->java (generation), then the object is the key and the
 handle-number is the value.  This is for improved indexing. */
 
 /*
-handle(X,Handles,Handles) --> [0,126,H1,H0], 
+handle(X,Handles,Handles) --> [0,126,H1,H0],
 	% baseWireHandle in java.io.ObjectStreamConstants; no more than 64k-1 objects!
-	{(nonvar(H1)-> N is H1*256+H0 ; N=N)}, 
-	{handle2Object(N,Handles,X), H0 is N mod 256, H1 is N//256}. 
+	{(nonvar(H1)-> N is H1*256+H0 ; N=N)},
+	{handle2Object(N,Handles,X), H0 is N mod 256, H1 is N//256}.
 */
 % No longer limited to 64k-1 objects, courtesy XSB, Inc.:
 handle(X,Handles,Handles) --> [B1,B2,B3,B4],
 	{(nonvar(B1)
 	  ->	 N is (B1<<24 + B2<<16 + B3<<8 + B4) - 8257536 /*16'7E0000*/,
-	  	 handle2Object(N,Handles,X)
+		 handle2Object(N,Handles,X)
 	  ;	 handle2Object(N1,Handles,X),
-	  	 N is N1 + 8257536 /*16'7E0000*/,
+		 N is N1 + 8257536 /*16'7E0000*/,
 		 B4 is N /\ 255,
 		 Na is N>>8,
 		 B3 is Na /\ 255,
@@ -758,8 +758,8 @@ handle(X,Handles,Handles) --> [B1,B2,B3,B4],
 		 B2 is Nb /\ 255,
 		 B1 is Nb>>8 /\ 255
 	 )}.
-	 
-handle2Object(N,H1,X) :- 
+
+handle2Object(N,H1,X) :-
 	nonvar(N) -> fetchPreviousHandle(H1,N,X) ; findPreviousObject(X,H1,N), nonvar(N).
 
 
@@ -768,7 +768,7 @@ handle2Object(N,H1,X) :-
 % notice that objects in handles are ground terms
 
 findPreviousObject(Object,handles(_N,Tree),N) :-
-	once(( Object = class(_,_,_) ; Object = string(_) ; 
+	once(( Object = class(_,_,_) ; Object = string(_) ;
 	  Object = object(class('com.declarativa.interprolog.VariableModel',_,_),_);
 	  repeatedObjectsDetectedGenerating )),
 	find(Tree,Object,N).
@@ -791,7 +791,7 @@ newHandle(_,handles(N0,Tree0),handles(N1,Tree0),Bytes,Bytes) :- N1 is N0+1.
 
 nullReference(null,H,H) --> tC_NULL.
 
-exception(unsupportedException,H,H) --> tC_EXCEPTION. 
+exception(unsupportedException,H,H) --> tC_EXCEPTION.
 	% not supported: , reset, object(X), {is_throwable(X)}, reset ????
 
 %%%resetContext --> tC_RESET.
@@ -801,7 +801,7 @@ magic --> sTREAM_MAGIC.
 streamversion --> sTREAM_VERSION.
 
 % values(+ClassDescription,-Data,H1,Hn)
-values(class(_Name,_VUID,classDescInfo(Fields,_Flags,_Super)),Data,H1,Hn) --> 
+values(class(_Name,_VUID,classDescInfo(Fields,_Flags,_Super)),Data,H1,Hn) -->
 	valuesOfFields(Fields,Data,H1,Hn).
 
 valuesOfFields([],[],H,H) --> [].
@@ -815,18 +815,18 @@ valueOfField(boolean(_FieldName),X,H,H) --> boolean(X).
 valueOfField(char(_FieldName),X,H,H) --> char(X).
 valueOfField(float(_FieldName),X,H,H) --> float(X).
 valueOfField(double(_FieldName),X,H,H) --> double(X).
-valueOfField(objectField(_FieldName,_ClassName),Value,H1,Hn) --> 
+valueOfField(objectField(_FieldName,_ClassName),Value,H1,Hn) -->
 	object(Value,H1,Hn). % Avoid binding ClassName downwards, weird chars in it...
 	% No type checking here, that's not our job
-valueOfField(arrayField(_FieldName,_ClassName),Values,H1,Hn) --> 
-	object(Values,H1,Hn). 
+valueOfField(arrayField(_FieldName,_ClassName),Values,H1,Hn) -->
+	object(Values,H1,Hn).
 
 
 
 % BASIC TYPES...
 byte(X) --> [B0], {var(X) -> analyseByte(B0,X) ;  integer(X), generateByte(B0,X)}.
 short(X) --> [B1,B0], {var(X) -> analyseShort(B1,B0,X) ;  integer(X), generateShort(B1,B0,X)}.
-int(X) --> [B3,B2,B1,B0], 
+int(X) --> [B3,B2,B1,B0],
 	{var(X) -> analyseInt(B3,B2,B1,B0,X) ; integer(X), generateInt(B3,B2,B1,B0,X)}.
 
 analyseByte(B0,X) :- B0>=128, !, X is B0-256.
@@ -842,19 +842,19 @@ analyseShort(B1,B0,X) :- X is B1*256+B0.
 generateShort(B1,B0,X) :- X<0, !, XX is X + 65536, B0 is XX mod 256, B1 is XX // 256.
 generateShort(B1,B0,X) :- B0 is X mod 256, B1 is X // 256, B1 < 256.
 
-analyseInt(B3,B2,B1,B0,X) :- 
+analyseInt(B3,B2,B1,B0,X) :-
 	X is (B3<< 24) \/ (B2 << 16) \/ (B1 << 8) \/ B0.
 
-generateInt(B3,B2,B1,B0,X) :- 
+generateInt(B3,B2,B1,B0,X) :-
 	B3 is (X >> 24) /\ 255, B2 is (X >> 16) /\  255, B1 is (X >> 8) /\  255, B0 is X /\ 255.
 
 % to big for Prolog to handle:
-% long(long(B7,B6,B5,B4,B3,B2,B1,B0)) --> [B7,B6,B5,B4,B3,B2,B1,B0]. 
-long(long(B76,B54,B32,B10)) --> short(B76), short(B54), short(B32), short(B10). 
+% long(long(B7,B6,B5,B4,B3,B2,B1,B0)) --> [B7,B6,B5,B4,B3,B2,B1,B0].
+long(long(B76,B54,B32,B10)) --> short(B76), short(B54), short(B32), short(B10).
 
 boolean(X) --> [X].
 
-float(X) --> [B3,B2,B1,B0], 
+float(X) --> [B3,B2,B1,B0],
 	{var(X) -> analyseFloat(B3,B2,B1,B0,S,M,E), cvtFloat(S,E,M,X)
 			 ; float(X),
 			 (X=0.0 -> B3=0, B2=0, B1=0, B0=0 ;
@@ -862,17 +862,17 @@ float(X) --> [B3,B2,B1,B0],
 
 double(double(B7,B6,B5,B4,B3,B2,B1,B0)) --> [B7,B6,B5,B4,B3,B2,B1,B0]. % cf. IEEE 754
 
-char(X) --> [B1,B0], 
-	{var(X) -> X is B1*256 + B0 ;  
+char(X) --> [B1,B0],
+	{var(X) -> X is B1*256 + B0 ;
 		integer(X), X >= 0, B0 is X mod 256, B1 is X // 256, B1 < 256}.
 
 
-/*atom_chars is bad according to Michael Kifer, should use atom_codes:*/  
-utf(Name) --> {var(Name)}, !, 
+/*atom_chars is bad according to Michael Kifer, should use atom_codes:*/
+utf(Name) --> {var(Name)}, !,
 	short(Length), utf2Atomchars(Length,List), {atom_codes(Name,List)}.
-utf(Name) --> {atom_codes(Name,List)}, [B1,B0], 
+utf(Name) --> {atom_codes(Name,List)}, [B1,B0],
 	atomchars2utf(List,ByteCount), {generateShort(B1,B0,ByteCount)}.
-		
+
 /* obsolete
 utfChars(0,[]) --> [].
 utfChars(N,[C|More]) --> [C], {NN is N-1}, utfChars(NN,More).
@@ -882,16 +882,16 @@ utfChars(N,[C|More]) --> [C], {NN is N-1}, utfChars(NN,More).
 % utf2Atomchars(+BytesLeft,-AtomChars)  parsing the stream
 utf2Atomchars(0,[]) --> [].
 utf2Atomchars(N,[C|More]) --> [C], {C<128, !, NN is N-1}, utf2Atomchars(NN,More).
-utf2Atomchars(N,[AC|More]) --> [A,B], 
+utf2Atomchars(N,[AC|More]) --> [A,B],
 	{NN is N-2, AC is (((A /\ 31) << 6) \/ (B /\ 63)), AC<256}, utf2Atomchars(NN,More).
 
 % cf. DataOutput.writeUTF(String) documentation:
 % atomchars2utf(+AtomChars,-ByteCount)  generating the stream
 atomchars2utf([],0) --> [].
-atomchars2utf([C|More],N) --> [C], {C<128, !}, 
+atomchars2utf([C|More],N) --> [C], {C<128, !},
 	atomchars2utf(More,NN), {N is NN+1}.
-atomchars2utf([C|More],N) --> [C1,C2], 
-	{C<256, C1 is (192 \/ (31 /\ (C >> 6))), C2 is (128 \/ (63 /\ C))}, 
+atomchars2utf([C|More],N) --> [C1,C2],
+	{C<256, C1 is (192 \/ (31 /\ (C >> 6))), C2 is (128 \/ (63 /\ C))},
 	atomchars2utf(More,NN), {N is NN+2}.
 
 
@@ -919,15 +919,15 @@ tC_ENUM --> [126].
 
 % cf. IEEE 754 float(B3,B2,B1,B0)
 
-analyseFloat(B3,B2,B1,B0,Sign,Mantissa,Exponent) :- 
-	Sign is B3 >> 7, Exponent is ((B3 /\ 127)<<1)+ (B2 >>7) - 127, 
+analyseFloat(B3,B2,B1,B0,Sign,Mantissa,Exponent) :-
+	Sign is B3 >> 7, Exponent is ((B3 /\ 127)<<1)+ (B2 >>7) - 127,
 	Mantissa is ((B2 /\  127)<< 16) + (B1<<8) + B0. % without the extra 1 to the left of decimal point
 
-generateFloat(B3,B2,B1,B0,Sign,Mantissa,Exponent) :- 
+generateFloat(B3,B2,B1,B0,Sign,Mantissa,Exponent) :-
 	B3 is (Sign << 7) \/ ((Exponent+127) >> 1),
 	B2 is (((Exponent+127) /\ 1) << 7)   \/ (Mantissa >> 16),
 	B1 is (Mantissa >> 8) /\ 255,
-	B0 is Mantissa /\ 255. 
+	B0 is Mantissa /\ 255.
 
 /************************************************/
 /* convert float (IEEE 754), courtesy of Davis S. Warren
@@ -1041,7 +1041,7 @@ ipAnalyseTerm(T,T,[],[],[]).
 ipAnalyseFields(classDescInfo(Fields,_,null),[]+ThisData, []+TemplateData,Names,Vars,Subs) :-
 	!,
 	ipAnalyseClassFields(Fields,ThisData,TemplateData,Names,Vars,Subs).
-ipAnalyseFields(classDescInfo(Fields,_,/*Super*/ 
+ipAnalyseFields(classDescInfo(Fields,_,/*Super*/
 		class(_SName,_SVUID,SuperInfo)), SuperData+ThisData, TemplateSuper+TemplateThis,Names,Vars,Subs
 	) :-
 	ipAnalyseFields(/*Super*/ SuperInfo,SuperData,TemplateSuper,Names1,Vars1,Subs1),
@@ -1049,7 +1049,7 @@ ipAnalyseFields(classDescInfo(Fields,_,/*Super*/
 	append(Names1,Names2,Names),
 	append(Vars1,Vars2,Vars),
 	append(Subs1,Subs2,Subs).
-	
+
 % ipAnalyseClassFields(Fields,ThisData,TemplateThis,Names2,Vars2,Subs2): do it for one class
 ipAnalyseClassFields([],[],[],[],[],[]) :- !.
 ipAnalyseClassFields([Field1|Fields],[Data1|Data],[Var1|Templates],[Field1|Names],[Var1|Vars],[Data1|Subs]) :-
@@ -1076,13 +1076,13 @@ ipObjectSpec(Class,Values,arrayObject(_D,Values)) :-
 	ipObjectTemplate(Class,arrayObject(_D,Values),_,_,_),
 	!,
 	is_list(Values).
-	
+
 ipObjectSpec(Class,VarValueList,Object) :-
-	atom(Class), is_list(VarValueList), 
+	atom(Class), is_list(VarValueList),
 	ipObjectTemplate(Class,Object,ANames,TVars,TSubs),
 	bindObjectVars(VarValueList,ANames,TVars),
 	bindFreeVarsWith(TVars,TSubs).
-	
+
 bindFreeVarsWith([],[]) :- !.
 bindFreeVarsWith([V|Vn],[_|Xn]) :- nonvar(V), !, bindFreeVarsWith(Vn,Xn).
 bindFreeVarsWith([X|Vn],[X|Xn]) :- bindFreeVarsWith(Vn,Xn).
@@ -1094,8 +1094,8 @@ bindObjectVars([VarName=X|VarValues],ANames,TVars) :-
 	bindObjectVars(VarValues,ANames,TVars).
 
 
-% findCheckVarAndType(Names,Vars,VarName,Value) 
-findCheckVarAndType([Term|_],[Value|_],VarName,Value) :- 
+% findCheckVarAndType(Names,Vars,VarName,Value)
+findCheckVarAndType([Term|_],[Value|_],VarName,Value) :-
 	typeNameTerm(Term,VarName,Value), !.
 findCheckVarAndType([_|Terms],[_|FreeVars],VarName,Value) :-
 	findCheckVarAndType(Terms,FreeVars,VarName,Value).
@@ -1113,7 +1113,7 @@ typeNameTerm(boolean(VarName),VarName,X) :- !, integer(X), X>=0, X=<1.
 typeNameTerm(char(VarName),VarName,X) :- !, integer(X), X>=0, X=<255.
 typeNameTerm(float(VarName),VarName,X) :- !, float(X).
 typeNameTerm(double(VarName),VarName,X) :- !, X=double(_B7,_B6,_B5,_B4,_B3,_B2,_B1,_B0).
-typeNameTerm(objectField(VarName,_Type),VarName,Value) :- !, 
+typeNameTerm(objectField(VarName,_Type),VarName,Value) :- !,
 	(Value = object(_D,_V) ; Value = class(_,_,_) ; Value = null ; Value = string(A), atom(A)).
 typeNameTerm(arrayField(VarName,_Type),VarName,Value) :- !, Value = arrayObject(_D,Values), is_list(Values).
 
@@ -1144,13 +1144,13 @@ find(n3(T1,M2,T2,M3,T3),X,V) :-
 
 
 
-ins2(n2(T1,M,T2),X,V,Tree) :- 
+ins2(n2(T1,M,T2),X,V,Tree) :-
 	M @=< X
 	 ->	ins2(T2,X,V,Tree1),
 		cmb2(Tree1,T1,M,Tree)
 	 ;	ins2(T1,X,V,Tree1),
 		cmb1(Tree1,M,T2,Tree).
-ins2(n3(T1,M2,T2,M3,T3),X,V,Tree) :- 
+ins2(n3(T1,M2,T2,M3,T3),X,V,Tree) :-
 	M2 @=< X
 	 ->	(M3 @=< X
 		 ->	ins2(T3,X,V,Tree1),
